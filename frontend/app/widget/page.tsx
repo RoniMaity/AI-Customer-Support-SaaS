@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function WidgetPage() {
+// Prevent Next.js from statically pre-rendering this page
+export const dynamic = 'force-dynamic';
+
+function WidgetContent() {
   const searchParams = useSearchParams();
   const apiKey = searchParams.get('apiKey');
 
@@ -156,5 +159,14 @@ export default function WidgetPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+// Wrap in Suspense because useSearchParams requires it during build
+export default function WidgetPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '20px', fontFamily: 'sans-serif' }}>Loading chat...</div>}>
+      <WidgetContent />
+    </Suspense>
   );
 }
