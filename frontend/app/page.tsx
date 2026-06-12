@@ -29,10 +29,8 @@ export default function Home() {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Save token and tenant ID
+      // Save token
       localStorage.setItem('token', data.token);
-      localStorage.setItem('tenantId', data.tenant.id);
-      localStorage.setItem('tenantApiKey', data.tenant.api_key);
 
       // Redirect to dashboard
       router.push('/dashboard');
