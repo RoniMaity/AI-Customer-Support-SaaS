@@ -13,7 +13,7 @@ async function testWebhooks() {
     waParams.append('From', 'whatsapp:+14155238886');
     waParams.append('Body', 'I want a refund on my last order');
     
-    const waRes = await fetch(`http://localhost:3000/api/webhooks/whatsapp/${tenantId}`, {
+    const waRes = await fetch(`https://ai-customer-support-saas-qf3x.onrender.com/api/webhooks/whatsapp/${tenantId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: waParams
@@ -23,7 +23,7 @@ async function testWebhooks() {
     console.log('WhatsApp Response:', waText);
 
     console.log('\nTesting Email Webhook...');
-    const emailRes = await fetch(`http://localhost:3000/api/webhooks/email?tenantId=${tenantId}`, {
+    const emailRes = await fetch(`https://ai-customer-support-saas-qf3x.onrender.com/api/webhooks/email?tenantId=${tenantId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
