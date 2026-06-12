@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id           String         @id @default(uuid())
+  company_name String
+  api_key      String         @unique @default(uuid())
+  created_at   DateTime       @default(now())
+
+  users        UserAdmin[]
+  bot_configs  BotConfig[]
+  docs         KnowledgeDoc[]
+  conversations Conversation[]
+  messages     Message[]
+  tickets      Ticket[]
+}
+
+model UserAdmin {
+  id            String   @id @default(uuid())
+  tenant_id     String
+  email         String   @unique
+  password_hash String
+  role          String   @default("admin") // e.g. "admin", "agent"
+
+  tenant        Tenant   @relation(fields: [tenant_id], references: [id])
+  
+  @@index([tenant_id])
+}
+
+model BotConfig {
+  id               String   @id @default(uuid())
+  tenant_id        String   @unique
+  bot_name         String   @default("Support Bot")
+  welcome_message  String   @default("How can I help you today?")
+  personality      String   @default("Helpful and polite")
+  escalation_rules Json?
+
+  tenant           Tenant   @relation(fields: [tenant_id], references: [id])
+  
+  @@index([tenant_id])
+}
+
+model KnowledgeDoc {
+  id        String   @id @default(uuid())
+  tenant_id String
+  filename  String
+  file_type String
+  status    String   @default("pending") // e.g. "pending", "processed"
+
+  tenant    Tenant   @relation(fields: [tenant_id], references: [id])
+  
+  @@index([tenant_id])
+}
+
+model Conversation {
+  id               String    @id @default(uuid())
+  tenant_id        String
+  session_id       String    @unique
+  customer_name    String?
+  customer_email   String?
+  is_human_takeover Boolean  @default(false)
+
+  tenant         Tenant    @relation(fields: [tenant_id], references: [id])
+  messages       Message[]
+  tickets        Ticket[]
+  
+  @@index([tenant_id])
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversation_id String
+  tenant_id       String
+  sender          String       // "user", "ai", or "admin"
+  content         String
+  timestamp       DateTime     @default(now())
+
+  conversation    Conversation @relation(fields: [conversation_id], references: [id])
+  tenant          Tenant       @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([conversation_id])
+}
+
+model Ticket {
+  id              String       @id @default(uuid())
+  conversation_id String
+  tenant_id       String
+  query_summary   String
+  priority        String       @default("normal") // "low", "normal", "high"
+  status          String       @default("open")   // "open", "resolved"
+
+  conversation    Conversation @relation(fields: [conversation_id], references: [id])
+  tenant          Tenant       @relation(fields: [tenant_id], references: [id])
+  
+  @@index([tenant_id])
+}
