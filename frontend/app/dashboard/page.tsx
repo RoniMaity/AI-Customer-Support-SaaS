@@ -30,53 +30,82 @@ export default function Dashboard() {
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Admin Dashboard</h1>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif', backgroundColor: '#f4f4f9', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            Admin Dashboard
+            <span style={{ fontSize: '12px', backgroundColor: '#ffd700', color: '#856404', padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+              Demo Mode – Sample Data Loaded
+            </span>
+          </h1>
+        </div>
+        <button 
+          onClick={() => window.location.href = '/demo'}
+          style={{ padding: '10px 20px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          Test Customer Chat &rarr;
+        </button>
+      </div>
       
       {/* Simple Metrics */}
       <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-        <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3>Total Conversations</h3>
-          <p style={{ fontSize: '2rem', margin: 0 }}>{conversations.length}</p>
+        <div style={{ flex: 1, padding: '1.5rem', backgroundColor: 'white', border: '1px solid #eaeaea', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#666' }}>Total Conversations</h3>
+          <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold' }}>{conversations.length}</p>
         </div>
-        <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3>Total Tickets</h3>
-          <p style={{ fontSize: '2rem', margin: 0 }}>{tickets.length}</p>
+        <div style={{ flex: 1, padding: '1.5rem', backgroundColor: 'white', border: '1px solid #eaeaea', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#666' }}>Open Tickets</h3>
+          <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold' }}>{tickets.filter(t => t.status === 'open').length}</p>
+        </div>
+        <div style={{ flex: 1, padding: '1.5rem', backgroundColor: 'white', border: '1px solid #eaeaea', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#666' }}>Total Tickets</h3>
+          <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold' }}>{tickets.length}</p>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: '2rem' }}>
         {/* Conversations List */}
-        <div style={{ flex: 1 }}>
-          <h2>Recent Conversations</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+        <div style={{ flex: 1, backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #eaeaea' }}>
+          <h2 style={{ marginTop: 0 }}>Recent Conversations</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {conversations.map((conv) => (
-              <li key={conv.id} style={{ padding: '1rem', border: '1px solid #eee', marginBottom: '1rem', borderRadius: '4px' }}>
-                <strong>{conv.customer_name || 'Anonymous'}</strong> ({conv.customer_email || 'No email'})
-                <br />
-                <small>Session: {conv.session_id}</small>
+              <li key={conv.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <strong style={{ fontSize: '16px' }}>{conv.customer_name || 'Anonymous'}</strong>
+                </div>
+                <small style={{ color: '#888' }}>Session: {conv.session_id}</small>
               </li>
             ))}
+            {conversations.length === 0 && <li style={{ color: '#888' }}>No conversations yet.</li>}
           </ul>
         </div>
 
         {/* Tickets List */}
-        <div style={{ flex: 1 }}>
-          <h2>Active Tickets</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+        <div style={{ flex: 1, backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #eaeaea' }}>
+          <h2 style={{ marginTop: 0 }}>Active Tickets</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {tickets.map((ticket) => (
-              <li key={ticket.id} style={{ padding: '1rem', border: '1px solid #eee', marginBottom: '1rem', borderRadius: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <strong>Status: {ticket.status}</strong>
+              <li key={ticket.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ 
-                    color: ticket.priority === 'high' ? 'red' : 'green' 
+                    backgroundColor: ticket.status === 'open' ? '#ffeeba' : '#d4edda',
+                    color: ticket.status === 'open' ? '#856404' : '#155724',
+                    padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase'
                   }}>
-                    {ticket.priority.toUpperCase()}
+                    {ticket.status}
+                  </span>
+                  <span style={{ 
+                    color: ticket.priority === 'high' ? '#dc3545' : '#28a745',
+                    fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase'
+                  }}>
+                    {ticket.priority} PRIORITY
                   </span>
                 </div>
-                <p>{ticket.query_summary}</p>
+                <p style={{ margin: 0, fontSize: '15px' }}>{ticket.query_summary}</p>
               </li>
             ))}
+            {tickets.length === 0 && <li style={{ color: '#888' }}>No tickets yet.</li>}
           </ul>
         </div>
       </div>

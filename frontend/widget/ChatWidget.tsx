@@ -103,7 +103,7 @@ type Message = {
   text: string;
 };
 
-export default function ChatWidget({ apiUrl = 'http://localhost:3000/api/chat', tenantToken = '' }) {
+export default function ChatWidget({ apiUrl = 'http://localhost:3000/api/chat', tenantApiKey = '' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, sender: 'bot', text: 'Hi! How can I help you today?' }
@@ -143,7 +143,7 @@ export default function ChatWidget({ apiUrl = 'http://localhost:3000/api/chat', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tenantToken}`
+          'x-api-key': tenantApiKey
         },
         body: JSON.stringify({ query: userText, conversationId })
       });

@@ -23,7 +23,7 @@ const initWidget = () => {
 
   // Mount the React component
   const root = createRoot(container);
-  root.render(<ChatWidget apiUrl={apiUrl} tenantToken={tenantToken} />);
+  root.render(<ChatWidget apiUrl={apiUrl} tenantApiKey={tenantToken} />);
 };
 
 // Ensure DOM is fully loaded before injecting the widget

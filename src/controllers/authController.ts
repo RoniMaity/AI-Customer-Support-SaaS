@@ -84,7 +84,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       { expiresIn: '1d' }
     );
 
-    res.json({ message: 'Login successful', token });
+    // Fetch tenant to get API Key for the demo experience
+    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
+
+    res.json({ message: 'Login successful', token, apiKey: tenant?.api_key });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });

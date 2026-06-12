@@ -1,0 +1,15 @@
+SaaSify AI Documentation
+
+Pricing Plans:
+1. Starter: $49/month. Includes 10,000 API requests, basic analytics, and community support. Ideal for early-stage startups.
+2. Pro: $199/month. Includes 100,000 API requests, advanced analytics, priority email support, and custom webhooks.
+3. Enterprise: Custom pricing. Unlimited API requests, dedicated account manager, SLA guarantees, and SSO integration. Contact sales for a quote.
+
+API Usage & Onboarding:
+- To get started, generate an API key from the developer dashboard.
+- All requests must include the 'Authorization: Bearer <API_KEY>' header.
+- The rate limit for the Starter plan is 100 requests per minute. Pro plan allows 1000 requests per minute.
+- To integrate the chat widget, paste the provided JavaScript snippet just before the closing </body> tag of your website.
+
+Refund Policy:
+We offer a 14-day money-back guarantee for all new subscriptions. No questions asked. Contact support@saasify.ai for refunds.
