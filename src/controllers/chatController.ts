@@ -15,12 +15,22 @@ export const handleChat = async (req: AuthRequest, res: Response): Promise<void>
   }
 
   try {
-    // 1. Check for Human Handoff Interception
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId }
+    // 1. Check or Create Conversation
+    let conversation = await prisma.conversation.findUnique({
+      where: { session_id: conversationId }
     });
 
-    if (conversation?.is_human_takeover) {
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          tenant_id: tenantId,
+          session_id: conversationId,
+          customer_name: "Website Visitor"
+        }
+      });
+    }
+
+    if (conversation.is_human_takeover) {
       console.log(`[HANDOFF] Bypassing AI for Conversation ${conversationId}. Emitting to human admin.`);
       
       const io = getIo();

@@ -111,6 +111,11 @@ export default function ChatWidget({ apiUrl = 'http://localhost:3000/api/chat', 
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
+  const [conversationId] = useState(() => {
+    // Generate a simple unique ID for this chat session
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -140,7 +145,7 @@ export default function ChatWidget({ apiUrl = 'http://localhost:3000/api/chat', 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${tenantToken}`
         },
-        body: JSON.stringify({ query: userText })
+        body: JSON.stringify({ query: userText, conversationId })
       });
 
       if (!response.body) throw new Error('No response body');

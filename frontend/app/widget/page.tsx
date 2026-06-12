@@ -49,6 +49,11 @@ function WidgetContent() {
     fetchConfig();
   }, [apiKey]);
 
+  const [conversationId] = useState(() => {
+    // Generate a simple unique ID for this chat session
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  });
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -75,7 +80,7 @@ function WidgetContent() {
           'Content-Type': 'application/json',
           'x-api-key': apiKey // Include API key in requests for tenant validation
         },
-        body: JSON.stringify({ query: userText })
+        body: JSON.stringify({ query: userText, conversationId })
       });
 
       if (!response.body) throw new Error('No response body');
