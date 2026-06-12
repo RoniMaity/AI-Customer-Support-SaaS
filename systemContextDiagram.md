@@ -1,49 +1,44 @@
+# System Context Architecture
+
+This C4-model inspired diagram shows the high-level system architecture and how different external services integrate with our platform.
+
 ```mermaid
-flowchart LR
-    subgraph Clients["Client Interfaces"]
-        A["Next.js Admin Dashboard"]
-        B["Embeddable Chat Widget (iframe)"]
-        WApp["WhatsApp User"]
-        Email["Email User"]
-    end
-
-    subgraph BackendApp["Node.js / Express Backend"]
-        C["Auth Middleware (JWT & API Key)"]
-        D["API Controllers (Dashboard, Webhooks, Tenant)"]
-        E["Socket.io Server (Human Handoff)"]
-        F["RAG Service (Chunking & Embeddings)"]
-    end
-
-    subgraph Databases["Data Storage Layer"]
-        G[("PostgreSQL\n(Prisma ORM)")]
-        H[("Pinecone\n(Vector DB)")]
-    end
-
-    subgraph External["External Services"]
-        I["Grok API\n(LLM Service)"]
-        J["Twilio\n(WhatsApp Webhook)"]
-        K["Resend/SendGrid\n(Email Webhook)"]
-    end
-
-    %% Client -> Backend flows
-    A <-- "JWT Auth" --> C
-    B <-- "x-api-key" --> C
+graph TD
+    %% Actors
+    Admin["SaaS Admin / Live Agent"]
+    Visitor["Customer / Website Visitor"]
     
-    WApp <--> J
-    J -- "POST /api/webhooks/whatsapp" --> D
+    %% Core System
+    subgraph "AI Customer Support SaaS Platform"
+        Frontend["Vercel Frontend (Next.js)<br/>Admin Dashboard & Demo Storefront"]
+        Backend["Render Backend (Express.js)<br/>API & Socket Server"]
+        Widget["Embeddable Chat Widget<br/>(widget.js via iframe)"]
+    end
     
-    Email --> K
-    K -- "POST /api/webhooks/email" --> D
+    %% Databases
+    DB[("PostgreSQL Database<br/>(Prisma ORM)")]
+    VectorDB[("Pinecone<br/>(Vector Database)")]
+    
+    %% External Integrations
+    LLM["Groq API<br/>(LLaMA-3 Model)"]
+    HF["HuggingFace<br/>(Embeddings Model)"]
+    Twilio["Twilio<br/>(WhatsApp Webhooks)"]
+    Email["Email Provider<br/>(Inbound Webhooks)"]
 
-    %% Backend routing
-    C --> D
-    D <--> E
-    D <--> F
-
-    %% Backend -> Database flows
-    D <-- "CRUD Operations" --> G
-    F -- "Store/Search Embeddings" --> H
-
-    %% Backend -> External APIs
-    F <-- "Context + Prompt Stream" --> I
+    %% Relationships
+    Admin -- "Manages documents, tickets,<br/>and chats live" --> Frontend
+    Visitor -- "Chats via website" --> Widget
+    Visitor -- "Sends WhatsApp message" --> Twilio
+    Visitor -- "Sends Email" --> Email
+    
+    Frontend -- "REST API / Socket.io" --> Backend
+    Widget -- "REST API" --> Backend
+    
+    Twilio -- "POST Webhook" --> Backend
+    Email -- "POST Webhook" --> Backend
+    
+    Backend -- "Reads/Writes State" --> DB
+    Backend -- "Generates Embeddings" --> HF
+    Backend -- "Upserts/Queries Vectors" --> VectorDB
+    Backend -- "Streams RAG Prompts" --> LLM
 ```

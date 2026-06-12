@@ -1,79 +1,40 @@
-# Operations & Flows
+# System Use Cases
 
-## RAG Pipeline Flow
+This diagram outlines the primary actors and their interactions with the AI Customer Support SaaS Platform.
+
 ```mermaid
-flowchart TD
-    subgraph Ingestion [Document Ingestion]
-        Upload[Upload .txt / .md via Admin API] --> Read[Read File Content]
-        Read --> Chunk[Split into chunks]
-        Chunk --> Embed[Generate Embeddings via OpenAI/HuggingFace]
-        Embed --> Store[Store in Pinecone with tenant_id metadata]
-    end
+usecaseDiagram
+    actor "SaaS Admin" as Admin
+    actor "Customer" as Customer
+    actor "External Service (Twilio/Email)" as Webhook
 
-    subgraph Retrieval [Chat Retrieval]
-        Query[User Query] --> QueryEmbed[Embed Query]
-        QueryEmbed --> Search[Similarity Search in Pinecone filtering by tenant_id]
-        Search --> Context[Extract text chunks]
-        Context --> Prompt[Build Contextual Prompt]
-        Prompt --> Grok[Send to Grok API]
-    end
-```
+    package "AI Support Platform" {
+        usecase "Manage Knowledge Base" as UC1
+        usecase "View Dashboard Analytics" as UC2
+        usecase "Handle Live Chat Escalations" as UC3
+        usecase "Manage Support Tickets" as UC4
+        
+        usecase "Chat with AI Widget" as UC5
+        usecase "Request Human Agent" as UC6
+        usecase "Submit Email/WhatsApp Inquiry" as UC7
+        
+        usecase "Create Support Ticket" as UC8
+        usecase "Generate RAG Response" as UC9
+    }
 
-## Multi-Tenant Enforcement Flow
-```mermaid
-flowchart TD
-    Req[Incoming Request] --> Auth{Auth Middleware}
-    
-    Auth -->|Admin Dashboard Flow| JWT[Verify JWT token]
-    JWT --> ExtractJWT[Extract tenantId from decoded token]
-    
-    Auth -->|Public Widget Flow| APIKey[Check x-api-key header]
-    APIKey --> DBCheck[Lookup Tenant by api_key]
-    DBCheck --> ExtractKey[Extract tenantId from Tenant record]
-    
-    ExtractJWT --> Bind[Attach req.user.tenantId]
-    ExtractKey --> Bind
-    
-    Bind --> Controllers[Controllers / Services]
-    
-    Controllers --> Prisma[Prisma Database Queries]
-    Prisma -->|Always append explicitly| WhereClause[where: { tenant_id: req.user.tenantId }]
-    
-    WhereClause --> PostgreSQL[(Isolated Tenant Data)]
-```
+    Admin --> UC1
+    Admin --> UC2
+    Admin --> UC3
+    Admin --> UC4
 
-## Widget Integration Flow
-```mermaid
-sequenceDiagram
-    participant Host as Client Website
-    participant Script as widget.js
-    participant NextJS as Next.js (/widget?apiKey=...)
-    participant API as Express API
-    
-    Host->>Script: Execute <script> with data-api-key
-    Script->>Host: Inject floating UI container & hidden iframe
-    Script->>NextJS: iframe src loaded
-    NextJS->>API: GET /api/tenant/config (Header: x-api-key)
-    API-->>NextJS: Returns BotConfig (Bot Name, Welcome Msg)
-    NextJS-->>Script: Render Chat UI inside iframe
-    Host->>Script: User clicks chat toggle
-    Script->>Host: iframe display: block
-```
+    Customer --> UC5
+    Customer --> UC6
+    Customer --> UC7
 
-## External Integrations Flow
-```mermaid
-flowchart TD
-    subgraph WhatsApp [WhatsApp Handling]
-        Twilio[Twilio Webhook] --> |POST /api/webhooks/whatsapp/:tenantId| WA[handleWhatsappWebhook]
-        WA --> WAConv[Find/Create Conversation by session_id = Phone Number]
-        WAConv --> WARAG[RAG Pipeline + Grok API]
-        WARAG --> Twiml[Return TwiML XML Response]
-    end
+    Webhook --> UC8
 
-    subgraph Email [Email Handling]
-        SendGrid[Email Provider Webhook] --> |POST /api/webhooks/email| Email[handleEmailWebhook]
-        Email --> EmailConv[Find/Create Conversation by session_id = Sender Email]
-        EmailConv --> Ticket[Create High Priority Ticket]
-        Ticket --> Flag[Update Conversation is_human_takeover = true]
-    end
+    %% Includes & Extends
+    UC5 ..> UC9 : <<includes>>
+    UC6 ..> UC3 : <<triggers>>
+    UC7 ..> UC8 : <<triggers>>
 ```

@@ -1,71 +1,59 @@
+# Entity Relationship Diagram (ERD)
+
+This diagram outlines the core data structures used in the PostgreSQL database, managed by Prisma. It supports our multi-tenant SaaS architecture.
+
 ```mermaid
 erDiagram
-    TENANT ||--o{ USER_ADMIN : "has"
-    TENANT ||--o{ KNOWLEDGE_DOC : "owns"
-    TENANT ||--|| BOT_CONFIG : "configures"
-    TENANT ||--o{ CONVERSATION : "tracks"
-    TENANT ||--o{ MESSAGE : "stores"
-    TENANT ||--o{ TICKET : "manages"
-
-    TENANT {
-        string id PK
-        string company_name
-        string api_key
-        datetime created_at
+    Tenant {
+        String id PK "UUID"
+        String company_name
+        String email
+        String password
+        String api_key "For widget authentication"
+        DateTime created_at
     }
 
-    USER_ADMIN {
-        string id PK
-        string tenant_id FK
-        string email
-        string password_hash
-        string role "admin / agent"
+    Document {
+        String id PK "UUID"
+        String tenant_id FK
+        String title
+        String content
+        DateTime created_at
     }
 
-    BOT_CONFIG {
-        string id PK
-        string tenant_id FK
-        string bot_name
-        string welcome_message
-        string personality
-        json escalation_rules
+    Conversation {
+        String id PK "UUID"
+        String tenant_id FK
+        String session_id "Browser session or Phone Number"
+        String customer_name
+        String customer_email
+        Boolean is_human_takeover "True if escalated"
+        DateTime created_at
+        DateTime updated_at
     }
 
-    KNOWLEDGE_DOC {
-        string id PK
-        string tenant_id FK
-        string filename
-        string file_type
-        string status "pending / processed"
+    Message {
+        String id PK "UUID"
+        String conversation_id FK
+        String tenant_id FK
+        String sender "user, bot, or human"
+        String content
+        DateTime created_at
     }
 
-    CONVERSATION {
-        string id PK
-        string tenant_id FK
-        string session_id
-        string customer_name
-        string customer_email
-        boolean is_human_takeover
+    Ticket {
+        String id PK "UUID"
+        String tenant_id FK
+        String conversation_id FK
+        String query_summary
+        String status "open, in_progress, resolved"
+        String priority "low, medium, high"
+        DateTime created_at
     }
 
-    MESSAGE {
-        string id PK
-        string conversation_id FK
-        string tenant_id FK
-        string sender "user | ai | admin"
-        string content
-        datetime timestamp
-    }
-
-    TICKET {
-        string id PK
-        string conversation_id FK
-        string tenant_id FK
-        string query_summary
-        string priority "low | normal | high"
-        string status "open | resolved"
-    }
-
-    CONVERSATION ||--o{ MESSAGE : "contains"
-    CONVERSATION ||--o{ TICKET : "generates"
+    Tenant ||--o{ Document : "has"
+    Tenant ||--o{ Conversation : "manages"
+    Tenant ||--o{ Ticket : "tracks"
+    Conversation ||--o{ Message : "contains"
+    Conversation ||--o| Ticket : "can escalate to"
 ```
