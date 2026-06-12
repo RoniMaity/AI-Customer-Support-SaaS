@@ -30,17 +30,27 @@ export const handleChat = async (req: AuthRequest, res: Response): Promise<void>
       });
     }
 
+    // Save user message to database
+    await prisma.message.create({
+      data: {
+        conversation_id: conversation.id,
+        tenant_id: tenantId,
+        sender: 'user',
+        content: query
+      }
+    });
+
     if (conversation.is_human_takeover) {
       console.log(`[HANDOFF] Bypassing AI for Conversation ${conversationId}. Emitting to human admin.`);
       
       const io = getIo();
-      io.to(tenantId).emit('new_customer_message', {
+      io.to(`tenant_${tenantId}`).emit('customer_message', {
         conversationId,
         content: query
       });
 
-      // Return immediately so the client doesn't wait for a stream
-      res.status(200).json({ message: 'Message routed to live agent' });
+      // Return immediately as a JSON response (handled gracefully by frontend)
+      res.status(200).json({ status: "sent_to_agent" });
       return;
     }
 
@@ -53,7 +63,7 @@ export const handleChat = async (req: AuthRequest, res: Response): Promise<void>
       });
 
       const io = getIo();
-      io.to(tenantId).emit('handoff_requested', {
+      io.to(`tenant_${tenantId}`).emit('handoff_requested', {
         conversationId,
         message: 'A customer requires human assistance'
       });
@@ -67,17 +77,17 @@ export const handleChat = async (req: AuthRequest, res: Response): Promise<void>
     // 2. Convert user query into an embedding
     const queryEmbedding = await generateEmbedding(query);
 
-    // 2. Retrieve top K similar chunks from Pinecone (Isolated by tenant)
+    // 3. Retrieve top K similar chunks from Pinecone (Isolated by tenant)
     const matches = await queryPinecone(queryEmbedding, tenantId, 3);
 
-    // 3. Extract text from metadata and construct the context string
+    // 4. Extract text from metadata and construct the context string
     const contextChunks = matches
       .map((match) => match.metadata?.text as string)
       .filter(Boolean); // removes undefined/null
 
     const contextString = contextChunks.join('\n\n');
 
-    // 4. Construct the simple prompt
+    // 5. Construct the simple prompt
     const prompt = `Answer the question based only on the provided context.
 
 Context:
@@ -86,10 +96,9 @@ ${contextString}
 Question:
 ${query}`;
 
-    // 5. Send to Groq API using basic fetch (User is using console.groq.com)
+    // 6. Send to Groq API using basic fetch
     const grokApiKey = process.env.GROK_API_KEY || '';
     
-    // We use the OpenAI-compatible endpoint provided by Groq
     const grokResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -97,7 +106,7 @@ ${query}`;
         'Authorization': `Bearer ${grokApiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile', // Using the modern Groq model standard
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         stream: true,
       }),
@@ -110,15 +119,15 @@ ${query}`;
       return;
     }
 
-    // 6. Setup headers for streaming response back to the client
+    // 7. Setup headers for streaming response back to the client
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Transfer-Encoding', 'chunked');
 
-    // Use native web streams to parse the SSE text stream
     const reader = grokResponse.body.getReader();
     const decoder = new TextDecoder('utf-8');
 
-    // Linear loop to read chunks and stream them via res.write()
+    let fullAiResponse = '';
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -129,27 +138,77 @@ ${query}`;
       for (const line of lines) {
         if (line.startsWith('data: ') && line !== 'data: [DONE]') {
           try {
-            // Extract the JSON payload from the SSE format
             const dataStr = line.slice(6);
             const data = JSON.parse(dataStr);
             const content = data.choices[0]?.delta?.content;
             
             if (content) {
-              // Write just the plain text content back to our client
+              fullAiResponse += content;
               res.write(content);
             }
-          } catch (e) {
-            // Ignore partial/invalid JSON from chunk splitting
-          }
+          } catch (e) {}
         }
       }
     }
 
-    // End the stream once complete
+    // Save AI response to DB
+    if (fullAiResponse) {
+      await prisma.message.create({
+        data: {
+          conversation_id: conversation.id,
+          tenant_id: tenantId,
+          sender: 'ai',
+          content: fullAiResponse
+        }
+      });
+    }
+
     res.end();
   } catch (error) {
     console.error('Chat API Error:', error);
     res.status(500).json({ error: 'Internal server error processing chat' });
+  }
+};
+
+export const adminReply = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { conversationId, message } = req.body;
+  const tenantId = req.user?.tenantId;
+
+  if (!conversationId || !message || !tenantId) {
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+
+  try {
+    const conversation = await prisma.conversation.findFirst({
+      where: { session_id: conversationId, tenant_id: tenantId }
+    });
+
+    if (!conversation) {
+      res.status(404).json({ error: 'Conversation not found' });
+      return;
+    }
+
+    await prisma.message.create({
+      data: {
+        conversation_id: conversation.id,
+        tenant_id: tenantId,
+        sender: 'admin',
+        content: message
+      }
+    });
+
+    const io = getIo();
+    io.to(`conversation_${conversationId}`).emit('admin_message', {
+      id: Date.now(),
+      sender: 'admin',
+      text: message
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Admin Reply Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -168,9 +227,8 @@ export const escalateToHuman = async (req: AuthRequest, res: Response): Promise<
       data: { is_human_takeover: true }
     });
 
-    // Broadcast to the tenant admin room that a conversation needs help
     const io = getIo();
-    io.to(tenantId).emit('handoff_requested', {
+    io.to(`tenant_${tenantId}`).emit('handoff_requested', {
       conversationId,
       message: 'A customer requires human assistance'
     });

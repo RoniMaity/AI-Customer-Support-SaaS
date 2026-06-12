@@ -16,18 +16,28 @@ export const initSocket = (server: HttpServer) => {
 
     // Admin joins a specific room for their tenant to listen for escalations
     socket.on('join_tenant_room', (tenantId: string) => {
-      socket.join(tenantId);
-      console.log(`Socket ${socket.id} joined tenant room: ${tenantId}`);
+      socket.join(`tenant_${tenantId}`);
+      console.log(`Socket ${socket.id} joined tenant room: tenant_${tenantId}`);
+    });
+
+    // Customer widget joins a specific room for their conversation
+    socket.on('join_conversation', (conversationId: string) => {
+      socket.join(`conversation_${conversationId}`);
+      console.log(`Socket ${socket.id} joined conversation room: conversation_${conversationId}`);
     });
 
     // Admin sends a reply manually (Handoff mode)
     socket.on('admin_reply', (data: { tenantId: string; conversationId: string; content: string }) => {
-      // In a real app, you would also save this message to the database here!
-      // Emit back to the specific conversation or to the tenant
-      io.to(data.tenantId).emit('new_bot_message', {
+      // Broadcast to the user via their conversation room
+      io.to(`conversation_${data.conversationId}`).emit('admin_message', {
+        id: Date.now(),
+        sender: 'admin',
+        text: data.content
+      });
+      // Optionally broadcast to the tenant room so other admins see it too
+      io.to(`tenant_${data.tenantId}`).emit('admin_message_echo', {
         conversationId: data.conversationId,
-        content: data.content,
-        sender: 'admin'
+        content: data.content
       });
     });
 

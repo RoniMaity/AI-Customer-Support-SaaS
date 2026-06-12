@@ -10,13 +10,22 @@ A multi-tenant, AI-powered customer support SaaS platform built to help business
 ## ✨ Core Features
 - **Multi-Tenant SaaS Architecture**: Completely isolated data, embeddings, and chat histories for different businesses.
 - **RAG-Powered AI Chat**: Instant, highly-accurate AI responses based on business-specific documents via Pinecone and Groq.
-- **Real-Time Human Handoff**: Instantly transfer a conversation to a live agent when the user requests it.
+- **Real-Time Human Handoff**: Real-time human handoff using WebSockets (admin can reply live).
 - **Embeddable Widget**: A lightweight, standalone script that businesses can drop into any external website.
 
 ## 🏆 Bonus Features
 - **WhatsApp Integration**: Support tickets created automatically from WhatsApp messages via Twilio Webhooks.
 - **Email Ticket Creation**: Converts incoming customer emails directly into support dashboard tickets.
 - **Live Dashboard**: Real-time metrics for Total Conversations, Open Tickets, and Escalations.
+
+---
+
+## ⚡ Real-Time Human Handoff (Live Chat)
+- The AI autonomously handles all initial queries via RAG.
+- When a user asks for a human, the system instantly switches to **live mode**.
+- The AI is disabled, and the admin receives a real-time WebSocket event on the dashboard.
+- Admins can immediately read the chat history and reply in real-time.
+- All messages (AI, Customer, and Admin) are persistently stored.
 
 ---
 
@@ -35,9 +44,12 @@ You can test the entire platform in under 2 minutes. No manual data entry is req
    - For **Demo User 1**: *"How much is the Starter plan?"* (Expect: $49/month)
    - For **Demo User 2**: *"What is your return policy?"* (Expect: 30 days)
 
-### 3. Test Human Handoff
+### 3. Test Human Handoff (Live Chat)
 1. In the chat widget, type exactly: **"I want to talk to a human"**.
-2. The AI will instantly halt its generation and respond: *"I am transferring you to a human agent now. They will be with you shortly."* 
+2. The AI will immediately halt its generation and transfer the chat.
+3. Open a new tab back to the dashboard and look at the **Live Handoffs** panel.
+4. Click on the active live chat, reply as an admin, and switch back to the widget tab.
+5. You will see your reply appear **instantly** in the widget via WebSockets!
 
 ---
 

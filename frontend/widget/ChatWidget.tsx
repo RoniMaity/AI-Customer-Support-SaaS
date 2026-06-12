@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 // Basic inline styles to keep the widget simple and standalone
 const styles = {
@@ -99,7 +100,7 @@ const styles = {
 
 type Message = {
   id: number;
-  sender: 'user' | 'bot';
+  sender: 'user' | 'bot' | 'admin';
   text: string;
 };
 
@@ -111,17 +112,39 @@ export default function ChatWidget({ apiUrl = 'https://ai-customer-support-saas-
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
+  const [isLiveChat, setIsLiveChat] = useState(false);
   const [conversationId] = useState(() => {
     // Generate a simple unique ID for this chat session
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Setup Socket.io connection for live handoff chat
+  useEffect(() => {
+    const backendUrl = new URL(apiUrl).origin;
+    const socket = io(backendUrl, { transports: ['websocket', 'polling'] });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      socket.emit('join_conversation', conversationId);
+    });
+
+    socket.on('admin_message', (data: { id: number, sender: 'admin', text: string }) => {
+      setIsLiveChat(true);
+      setMessages(prev => [...prev, data]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [apiUrl, conversationId]);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -134,10 +157,6 @@ export default function ChatWidget({ apiUrl = 'https://ai-customer-support-saas-
     setInputValue('');
     setIsLoading(true);
 
-    // Create an empty bot message to append streamed text to
-    const botMessageId = newMessageId + 1;
-    setMessages(prev => [...prev, { id: botMessageId, sender: 'bot', text: '' }]);
-
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -148,7 +167,23 @@ export default function ChatWidget({ apiUrl = 'https://ai-customer-support-saas-
         body: JSON.stringify({ query: userText, conversationId })
       });
 
+      // Handle JSON response for when handoff is active
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const json = await response.json();
+        if (json.status === 'sent_to_agent') {
+          setIsLiveChat(true);
+          // Do nothing. Wait for 'admin_message' socket event.
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (!response.body) throw new Error('No response body');
+
+      // Create an empty bot message to append streamed text to
+      const botMessageId = newMessageId + 1;
+      setMessages(prev => [...prev, { id: botMessageId, sender: 'bot', text: '' }]);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -166,9 +201,7 @@ export default function ChatWidget({ apiUrl = 'https://ai-customer-support-saas-
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => prev.map(msg => 
-        msg.id === botMessageId ? { ...msg, text: 'Sorry, I encountered an error. Please try again.' } : msg
-      ));
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -178,7 +211,14 @@ export default function ChatWidget({ apiUrl = 'https://ai-customer-support-saas-
     <div style={styles.container}>
       {isOpen && (
         <div style={styles.chatBox}>
-          <h3 style={styles.header}>Support Chat</h3>
+          <h3 style={styles.header}>
+            Support Chat
+            {isLiveChat && (
+              <span style={{ marginLeft: '10px', fontSize: '12px', backgroundColor: '#ffd700', color: '#856404', padding: '2px 6px', borderRadius: '12px', fontWeight: 'bold' }}>
+                Live Agent Connected
+              </span>
+            )}
+          </h3>
           
           <div style={styles.messagesArea}>
             {messages.map((msg) => (

@@ -56,3 +56,34 @@ export const getTickets = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const getConversationMessages = async (req: AuthRequest, res: Response): Promise<void> => {
+  const tenantId = req.user?.tenantId;
+  const id = req.params.id as string;
+
+  if (!tenantId || !id) {
+    res.status(401).json({ error: 'Unauthorized or invalid request' });
+    return;
+  }
+
+  try {
+    const conversation = await prisma.conversation.findFirst({
+      where: { session_id: id, tenant_id: tenantId }
+    });
+
+    if (!conversation) {
+      res.status(404).json({ error: 'Conversation not found' });
+      return;
+    }
+
+    const messages = await prisma.message.findMany({
+      where: { conversation_id: conversation.id },
+      orderBy: { timestamp: 'asc' }
+    });
+
+    res.json(messages);
+  } catch (error) {
+    console.error('Fetch messages error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

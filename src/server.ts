@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import app from './app';
 import { initSocket } from './socket';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 
 const httpServer = createServer(app);
 

@@ -6,7 +6,7 @@ import tenantRoutes from './routes/tenantRoutes';
 import ragRoutes from './routes/ragRoutes';
 import chatRoutes from './routes/chatRoutes';
 import webhookRoutes from './routes/webhookRoutes';
-import { getConversations, getTickets } from './controllers/dashboardController';
+import { getConversations, getTickets, getConversationMessages } from './controllers/dashboardController';
 import { authenticateToken } from './middleware/auth';
 
 const app = express();
@@ -32,6 +32,7 @@ app.use('/api/webhooks', webhookRoutes);
 
 // Dashboard Routes
 app.get('/api/conversations', authenticateToken, getConversations);
+app.get('/api/conversations/:id/messages', authenticateToken, getConversationMessages);
 app.get('/api/tickets', authenticateToken, getTickets);
 
 // Health check endpoint
