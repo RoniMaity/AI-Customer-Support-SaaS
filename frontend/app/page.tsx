@@ -15,7 +15,7 @@ export default function Home() {
     setError('');
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://ai-customer-support-saas-qf3x.onrender.com';
       const res = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

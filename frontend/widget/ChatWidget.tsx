@@ -103,7 +103,7 @@ type Message = {
   text: string;
 };
 
-export default function ChatWidget({ apiUrl = 'http://localhost:3000/api/chat', tenantApiKey = '' }) {
+export default function ChatWidget({ apiUrl = 'https://ai-customer-support-saas-qf3x.onrender.com/api/chat', tenantApiKey = '' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, sender: 'bot', text: 'Hi! How can I help you today?' }

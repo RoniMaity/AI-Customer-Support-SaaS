@@ -13,7 +13,7 @@ export type Ticket = {
 };
 
 // Uses NEXT_PUBLIC_API_URL from environment, falls back to localhost for dev
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000') + '/api';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://ai-customer-support-saas-qf3x.onrender.com') + '/api';
 
 export const fetchConversations = async (): Promise<Conversation[]> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';

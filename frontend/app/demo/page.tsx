@@ -55,7 +55,7 @@ export default function DemoStore() {
       {apiKey && apiKey !== 'MISSING_API_KEY' ? (
         <ChatWidget 
           tenantApiKey={apiKey} 
-          apiUrl={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/chat`}
+          apiUrl={`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-customer-support-saas-qf3x.onrender.com'}/api/chat`}
         />
       ) : (
         <div style={{ position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#fff3cd', color: '#856404', padding: '1rem', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>

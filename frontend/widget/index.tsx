@@ -14,7 +14,7 @@ const initWidget = () => {
   const tenantToken = scriptTag?.getAttribute('data-tenant-token') || '';
   
   // You can also read apiUrl from data attribute, or default to production URL
-  const apiUrl = scriptTag?.getAttribute('data-api-url') || 'http://localhost:3000/api/chat';
+  const apiUrl = scriptTag?.getAttribute('data-api-url') || 'https://ai-customer-support-saas-qf3x.onrender.com/api/chat';
 
   // Create a container div for our React app
   const container = document.createElement('div');

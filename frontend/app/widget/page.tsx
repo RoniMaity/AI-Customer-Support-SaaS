@@ -27,7 +27,7 @@ function WidgetContent() {
     // Validate API Key and fetch BotConfig
     const fetchConfig = async () => {
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://ai-customer-support-saas-qf3x.onrender.com';
         const res = await fetch(`${apiBase}/api/tenant/config`, {
           headers: { 'x-api-key': apiKey }
         });
@@ -73,7 +73,7 @@ function WidgetContent() {
 
     try {
       // Send chat request to our backend using the API Key
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://ai-customer-support-saas-qf3x.onrender.com';
       const response = await fetch(`${apiBase}/api/chat`, {
         method: 'POST',
         headers: {
