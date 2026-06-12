@@ -44,6 +44,26 @@ export const handleChat = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    // Keyword-based Escalation Detection
+    const escalationTriggers = ["human", "agent", "talk to someone", "real person", "support"];
+    if (escalationTriggers.some(trigger => query.toLowerCase().includes(trigger))) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { is_human_takeover: true }
+      });
+
+      const io = getIo();
+      io.to(tenantId).emit('handoff_requested', {
+        conversationId,
+        message: 'A customer requires human assistance'
+      });
+
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.write("I am transferring you to a human agent now. They will be with you shortly.");
+      res.end();
+      return;
+    }
+
     // 2. Convert user query into an embedding
     const queryEmbedding = await generateEmbedding(query);
 

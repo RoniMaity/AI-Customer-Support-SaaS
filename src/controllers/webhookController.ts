@@ -60,16 +60,16 @@ ${contextString}
 Question:
 ${Body}`;
 
-    // 3. Grok API Call (Non-streaming for Webhook)
+    // 3. Groq API Call (Non-streaming for Webhook)
     const grokApiKey = process.env.GROK_API_KEY || '';
-    const grokResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+    const grokResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${grokApiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-beta',
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         stream: false, // Must be false for Webhook so we can get the full reply
       }),
